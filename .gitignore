@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Runtime data (video uploads & rendered outputs)
+uploads/
+outputs/
+*.log
+
+# Environment
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Test media
+*.mp4
+*.mkv
+*.mov
+*.webm
+*.avi
+!public/**/*.mp4
+
+# Local tooling
+.claude/
+.impeccable/

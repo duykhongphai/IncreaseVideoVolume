@@ -1,0 +1,22 @@
+{
+  "name": "loudlift",
+  "version": "1.0.0",
+  "description": "Make any video louder, even and comfortable to listen to without touching the video stream. FFmpeg, GPU + CPU accelerated.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
+  },
+  "optionalDependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LoudLift</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f6fe0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 5 6 9H2v6h4l5 4V5z' fill='%232f6fe0'/%3E%3Cpath d='M15.54 8.46a5 5 0 0 1 0 7.07'/%3E%3Cpath d='M19.07 4.93a10 10 0 0 1 0 14.14'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <!-- SVG icon sprite (Lucide-style stroke icons) -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M7 3v18M17 3v18M2 12h20M2 7.5h5M2 16.5h5M17 7.5h5M17 16.5h5"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3 20 12 6 21V3z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></symbol>
+    <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></symbol>
+    <symbol id="i-wand" viewBox="0 0 24 24"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M3 21l9-9M12.2 6.2 11 5"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></symbol>
+    <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H3z"/><path d="M21 14h-3a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h3z"/><path d="M3 14v-2a9 9 0 0 1 18 0v2"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7l10-5z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+  </svg>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon"><svg class="ic"><use href="#i-volume"/></svg></span>
+      <div>
+        <h1>LoudLift</h1>
+        <p>Lossless video · GPU + CPU accelerated audio processing</p>
+      </div>
+    </div>
+    <div class="hw" id="hw">
+      <span class="hw-chip loading">Probing hardware…</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- STEP 1: Upload -->
+    <section class="card" id="step-upload">
+      <div class="card-head"><span class="step">1</span><h2>Select a video</h2></div>
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept="video/*,.mkv,.ts,.mts,.m2ts,.flv" hidden />
+        <div class="dz-inner">
+          <div class="dz-icon"><svg class="ic"><use href="#i-film"/></svg></div>
+          <p><strong>Drag &amp; drop a video here</strong> or <button type="button" class="link" id="browseBtn">browse files</button></p>
+          <p class="muted">MP4, MKV, MOV, WEBM, AVI, TS… No size limit. Everything is processed locally on this machine.</p>
+        </div>
+      </div>
+      <div class="upload-progress hidden" id="uploadProgress">
+        <div class="bar"><div class="fill" id="uploadFill"></div></div>
+        <div class="bar-info"><span id="uploadText">Uploading…</span><span id="uploadPct">0%</span></div>
+      </div>
+      <div class="fileinfo hidden" id="fileInfo"></div>
+    </section>
+
+    <!-- STEP 2: Settings -->
+    <section class="card disabled" id="step-settings">
+      <div class="card-head"><span class="step">2</span><h2>Volume settings</h2></div>
+
+      <div class="mode-tabs" id="modeTabs">
+        <button type="button" class="tab active" data-mode="multiplier">Multiplier (×)</button>
+        <button type="button" class="tab" data-mode="db">Decibels (dB)</button>
+        <button type="button" class="tab" data-mode="normalize">Auto normalize</button>
+        <button type="button" class="tab" data-mode="easy"><svg class="ic"><use href="#i-headphones"/></svg> Easy listening</button>
+        <button type="button" class="tab" data-mode="segments"><svg class="ic"><use href="#i-scissors"/></svg> Segments (timeline)</button>
+      </div>
+
+      <div class="mode-panel" id="panel-multiplier">
+        <div class="slider-row">
+          <input type="range" id="multRange" min="0.5" max="10" step="0.1" value="2" />
+          <div class="value-box"><input type="number" id="multInput" min="0.05" max="50" step="0.1" value="2" /><span>×</span></div>
+        </div>
+        <div class="presets">
+          <button type="button" data-mult="1.5">1.5×</button>
+          <button type="button" data-mult="2">2×</button>
+          <button type="button" data-mult="3">3×</button>
+          <button type="button" data-mult="4">4×</button>
+          <button type="button" data-mult="5">5×</button>
+          <button type="button" data-mult="8">8×</button>
+        </div>
+        <p class="hint" id="multHint">Equivalent to +6.02 dB</p>
+      </div>
+
+      <div class="mode-panel hidden" id="panel-db">
+        <div class="slider-row">
+          <input type="range" id="dbRange" min="-20" max="30" step="0.5" value="6" />
+          <div class="value-box"><input type="number" id="dbInput" min="-40" max="40" step="0.5" value="6" /><span>dB</span></div>
+        </div>
+        <div class="presets">
+          <button type="button" data-db="3">+3 dB</button>
+          <button type="button" data-db="6">+6 dB</button>
+          <button type="button" data-db="10">+10 dB</button>
+          <button type="button" data-db="15">+15 dB</button>
+          <button type="button" data-db="20">+20 dB</button>
+        </div>
+        <p class="hint" id="dbHint">Equivalent to ×2.0</p>
+      </div>
+
+      <div class="mode-panel hidden" id="panel-normalize">
+        <p class="desc">Brings the whole video to a standard loudness (EBU R128 loudnorm, two-pass). Useful when the video is too quiet or uneven.</p>
+        <div class="slider-row">
+          <label for="lufsRange" class="inline-label">Target</label>
+          <input type="range" id="lufsRange" min="-24" max="-8" step="1" value="-14" />
+          <div class="value-box"><input type="number" id="lufsInput" min="-30" max="-5" step="1" value="-14" /><span>LUFS</span></div>
+        </div>
+        <p class="hint">-14 LUFS: YouTube / Spotify · -16 LUFS: Podcast · -23 LUFS: Broadcast TV</p>
+      </div>
+
+      <div class="mode-panel hidden" id="panel-easy">
+        <p class="desc">Measures loudness the way human hearing perceives it (LUFS, EBU R128), evens out passages that are too quiet or too loud, removes low-frequency rumble and brings the whole video to a comfortable listening level. No manual tuning required.</p>
+        <div class="radio-group" id="easyPresets">
+          <label class="radio active">
+            <input type="radio" name="easyPreset" value="speech" data-target="-16" checked />
+            <span><strong><svg class="ic"><use href="#i-mic"/></svg> Speech · vlog · lecture · meeting</strong><small>-16 LUFS. Strong leveling so every word stays intelligible, rumble below 80 Hz removed. Ideal for phone and laptop speakers.</small></span>
+          </label>
+          <label class="radio">
+            <input type="radio" name="easyPreset" value="media" data-target="-14" />
+            <span><strong><svg class="ic"><use href="#i-film"/></svg> Film · music · gameplay</strong><small>-14 LUFS (YouTube standard). Keeps a more natural dynamic range and only lifts quiet passages gently.</small></span>
+          </label>
+          <label class="radio">
+            <input type="radio" name="easyPreset" value="night" data-target="-20" />
+            <span><strong><svg class="ic"><use href="#i-moon"/></svg> Night mode · headphones</strong><small>-20 LUFS with heavy dynamic range compression: whispers and explosions end up close in level, no sudden jumps.</small></span>
+          </label>
+        </div>
+        <div class="easy-opts">
+          <label class="check"><input type="checkbox" id="easyLeveler" checked /><span><strong>Level quiet / loud passages</strong><small>Lifts quiet speech and tames loud sections over time</small></span></label>
+          <label class="check"><input type="checkbox" id="easyHighpass" checked /><span><strong>Remove low rumble</strong><small>Filters handling noise, wind and fan hum at very low frequencies</small></span></label>
+          <span class="tl-group"><label for="easyTarget">Target</label><input type="number" id="easyTarget" step="0.5" min="-30" max="-8" value="-16" /> <span class="muted">LUFS</span></span>
+        </div>
+        <p class="hint">Two-pass processing: the whole video is measured first, then the exact gain is applied. More accurate than single-pass normalization. Video quality is untouched.</p>
+      </div>
+
+      <div class="mode-panel hidden" id="panel-segments">
+        <p class="desc">Split the video into segments and set an individual gain for each one to even out the volume. Split points are millisecond-precise. Grey is the original waveform, blue is after gain, red marks clipping.</p>
+        <div class="tl-status" id="tlStatus">Not analyzed yet.</div>
+        <div class="tl-wrap">
+          <video id="tlVideo" controls preload="metadata"></video>
+          <div class="tl-canvas-wrap"><canvas id="tlCanvas" tabindex="0" aria-label="Waveform timeline"></canvas></div>
+          <div class="tl-toolbar">
+            <button type="button" class="btn small" id="tlPlay"><svg class="ic"><use href="#i-play"/></svg> <span>Play</span></button>
+            <span class="tl-time" id="tlTime">0:00.000</span>
+            <button type="button" class="btn small primary" id="tlSplitHere" title="Shortcut: S"><svg class="ic"><use href="#i-scissors"/></svg> Split at playhead</button>
+            <span class="tl-group">
+              <input type="text" id="tlSplitAt" placeholder="m:ss.mmm" size="9" />
+              <button type="button" class="btn small" id="tlSplitAtBtn">Split at</button>
+            </span>
+            <span class="tl-group">
+              <button type="button" class="btn small" id="tlZoomOut" title="Zoom out"><svg class="ic"><use href="#i-minus"/></svg></button>
+              <button type="button" class="btn small" id="tlZoomIn" title="Zoom in"><svg class="ic"><use href="#i-plus"/></svg></button>
+              <button type="button" class="btn small" id="tlZoomFit" title="Fit whole video"><svg class="ic"><use href="#i-fit"/></svg> Fit</button>
+            </span>
+          </div>
+          <div class="tl-toolbar">
+            <button type="button" class="btn small secondary" id="tlAutoSplit"><svg class="ic"><use href="#i-wand"/></svg> Auto-split by loudness</button>
+            <span class="tl-group">
+              <label for="tlTarget">Target (RMS)</label>
+              <input type="number" id="tlTarget" value="-18" step="0.5" min="-40" max="-3" /> <span class="muted">dBFS</span>
+              <button type="button" class="btn small" id="tlLoudest" title="Use the loudest segment as the target">= loudest</button>
+              <button type="button" class="btn small secondary" id="tlBalance"><svg class="ic"><use href="#i-scale"/></svg> Balance all segments</button>
+            </span>
+            <button type="button" class="btn small ghost" id="tlClear">Clear all splits</button>
+          </div>
+          <p class="hint">Tips: scroll to zoom, drag to pan, click to move the playhead, drag a split line to fine-tune it, double-click a split line to remove it. Keys: S = split, Space = play/pause, ←/→ = nudge 10 ms (Shift = 1 s).</p>
+          <div class="seg-table-wrap"><table class="seg-table" id="segTable"></table></div>
+        </div>
+      </div>
+
+      <div class="analyze-row">
+        <button type="button" class="btn secondary" id="analyzeBtn"><svg class="ic"><use href="#i-activity"/></svg> <span>Analyze current loudness</span></button>
+        <span class="analyze-result" id="analyzeResult"></span>
+      </div>
+
+      <details class="advanced" id="advanced">
+        <summary><svg class="ic"><use href="#i-sliders"/></svg> Advanced options</summary>
+        <div class="adv-grid">
+          <label class="check">
+            <input type="checkbox" id="limiterChk" checked />
+            <span><strong>Anti-distortion limiter</strong><small>Caps peaks at 97% so strong boosts do not clip or distort</small></span>
+          </label>
+
+          <div class="field">
+            <label for="audioCodec">Audio codec</label>
+            <select id="audioCodec">
+              <option value="auto">Auto (by container)</option>
+              <option value="aac">AAC (recommended for MP4/MOV/MKV)</option>
+              <option value="mp3">MP3</option>
+              <option value="opus">Opus (WEBM/MKV)</option>
+              <option value="ac3">AC3 (Dolby Digital)</option>
+              <option value="flac">FLAC (lossless, MKV)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="audioBitrate">Audio bitrate</label>
+            <select id="audioBitrate">
+              <option value="128">128 kbps</option>
+              <option value="192" selected>192 kbps (recommended)</option>
+              <option value="256">256 kbps</option>
+              <option value="320">320 kbps</option>
+            </select>
+          </div>
+
+          <div class="field full">
+            <label>Video handling</label>
+            <div class="radio-group" id="videoModeGroup">
+              <label class="radio active">
+                <input type="radio" name="videoMode" value="copy" checked />
+                <span><strong>Keep the video stream as-is (recommended)</strong><small>No re-encoding: zero quality loss, very fast, only the audio is processed</small></span>
+              </label>
+              <label class="radio">
+                <input type="radio" name="videoMode" value="reencode" />
+                <span><strong>Re-encode video with GPU / CPU</strong><small>Use when you need a different codec or container, or when stream copy fails. Uses the GPU when available.</small></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="field reencode-only hidden">
+            <label for="encoderSel">Encoder</label>
+            <select id="encoderSel"></select>
+          </div>
+          <div class="field reencode-only hidden">
+            <label for="qualityRange">Quality: <span id="qualityLabel">20</span> <small>(lower = better quality, larger file)</small></label>
+            <input type="range" id="qualityRange" min="14" max="30" step="1" value="20" />
+          </div>
+        </div>
+      </details>
+
+      <div class="layer-bar hidden" id="segLayer">
+        <label class="check">
+          <input type="checkbox" id="applySegChk" checked />
+          <span><strong><svg class="ic"><use href="#i-layers"/></svg> Apply timeline segment gains first</strong><small id="segLayerInfo"></small></span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn primary big" id="startBtn" disabled><svg class="ic"><use href="#i-zap"/></svg> Start processing</button>
+      </div>
+    </section>
+
+    <!-- STEP 3: Progress -->
+    <section class="card hidden" id="step-progress">
+      <div class="card-head"><span class="step">3</span><h2>Processing</h2></div>
+      <div class="engine" id="engineLabel"></div>
+      <div class="bar big"><div class="fill" id="procFill"></div></div>
+      <div class="bar-info">
+        <span id="procText">Starting FFmpeg…</span>
+        <span id="procPct">0%</span>
+      </div>
+      <div class="stats" id="procStats"></div>
+      <div class="actions">
+        <button type="button" class="btn danger" id="cancelBtn"><svg class="ic"><use href="#i-x"/></svg> Cancel</button>
+      </div>
+    </section>
+
+    <!-- STEP 4: Result -->
+    <section class="card hidden" id="step-result">
+      <div class="card-head"><span class="step ok"><svg class="ic"><use href="#i-check"/></svg></span><h2>Done</h2></div>
+      <div class="result-grid">
+        <video id="preview" controls preload="metadata"></video>
+        <div class="result-info">
+          <div id="resultSummary"></div>
+          <a class="btn primary big" id="downloadBtn" href="#" download><svg class="ic"><use href="#i-download"/></svg> Download video</a>
+          <button type="button" class="btn secondary" id="againBtn"><svg class="ic"><use href="#i-refresh"/></svg> Try other settings on this video</button>
+          <button type="button" class="btn ghost" id="newBtn"><svg class="ic"><use href="#i-plus"/></svg> New video</button>
+        </div>
+      </div>
+      <details class="cmd"><summary>FFmpeg command used</summary><pre id="cmdText"></pre></details>
+    </section>
+
+    <div class="toast hidden" id="toast"></div>
+  </main>
+
+  <footer class="foot">Processed entirely on this machine with FFmpeg. Files are deleted automatically after 3 hours.</footer>
+
+  <script src="timeline.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
