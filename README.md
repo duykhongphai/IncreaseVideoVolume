@@ -41,8 +41,8 @@ Segment gains are an independent layer that can be combined with any other mode:
 **Install and run**
 
 ```bash
-git clone https://github.com/<you>/loudlift.git
-cd loudlift
+git clone https://github.com/duykhongphai/LoudLift.git
+cd LoudLift
 npm install
 npm start
 ```
