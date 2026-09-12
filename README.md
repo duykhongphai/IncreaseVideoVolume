@@ -9,7 +9,7 @@
 <h1 align="center">LoudLift</h1>
 
 <p align="center">
-  <strong>Make any video louder, even and comfortable to listen to — without touching a single video frame.</strong><br>
+  <strong>Make any video louder, even and comfortable to listen to, without touching a single video frame.</strong><br>
   A self-hosted web tool built on FFmpeg. Runs entirely on your machine, uses your GPU and every CPU core.
 </p>
 
@@ -21,17 +21,15 @@ Most "increase video volume" tools re-encode the whole file. That takes forever 
 
 On top of a simple gain slider it brings tools you would normally find in a video editor or a broadcast loudness suite:
 
-| | Feature | What it does |
-|---|---|---|
-| **×** | **Multiplier / dB** | Classic boost with presets, plus a loudness scan that tells you the maximum safe gain before clipping. |
-| **R128** | **Auto normalize** | Two-pass EBU R128 `loudnorm` to any LUFS target (YouTube -14, podcast -16, broadcast -23). |
-| **🎧** | **Easy listening** | Measures loudness the way human hearing perceives it, levels quiet and loud passages, removes low-frequency rumble and lands the whole video at a comfortable level. Presets for speech, film/music and night mode. |
-| **✂** | **Segments (timeline)** | Waveform timeline at 5 ms resolution with zoom and pan, millisecond-precise split points, auto-split by loudness changes, one-click balancing of every segment to the same RMS level, live "after gain" preview with clipping warnings. |
-| **⚡** | **GPU + CPU** | Optional re-encode mode auto-detects NVIDIA NVENC, Intel Quick Sync, AMD AMF and Apple VideoToolbox, with hardware decoding and automatic CPU fallback. Audio filters use every core. |
+| Feature | What it does |
+|---|---|
+| **Multiplier / dB** | Classic boost with presets, plus a loudness scan that tells you the maximum safe gain before clipping. |
+| **Auto normalize** | Two-pass EBU R128 `loudnorm` to any LUFS target (YouTube -14, podcast -16, broadcast -23). |
+| **Easy listening** | Measures loudness the way human hearing perceives it, levels quiet and loud passages, removes low-frequency rumble and lands the whole video at a comfortable level. Presets for speech, film/music and night mode. |
+| **Segments (timeline)** | Waveform timeline at 5 ms resolution with zoom and pan, millisecond-precise split points, auto-split by loudness changes, one-click balancing of every segment to the same RMS level, live "after gain" preview with clipping warnings. |
+| **GPU + CPU** | Optional re-encode mode auto-detects NVIDIA NVENC, Intel Quick Sync, AMD AMF and Apple VideoToolbox, with hardware decoding and automatic CPU fallback. Audio filters use every core. |
 
 Segment gains are an independent layer that can be combined with any other mode: balance the segments first, then run *Easy listening* on top. The loudness measurement pass sees the balanced signal, so the final level is exact.
-
-> The emoji in the table above are only for the README. The application UI uses SVG icons throughout.
 
 ## Quick start
 
