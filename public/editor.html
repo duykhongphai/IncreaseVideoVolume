@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video editor · LoudLift</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="editor.css" />
+</head>
+<body class="editor-page">
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3 20 12 6 21V3z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-square" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7l10-5z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/></symbol>
+  </svg>
+
+  <header class="editor-topbar">
+    <a class="editor-brand" id="editorBack" href="index.html" aria-label="Back to LoudLift">
+      <span class="brand-icon"><svg class="ic"><use href="#i-volume"/></svg></span>
+      <span><strong>LoudLift</strong><small>Video mask editor</small></span>
+    </a>
+    <div class="editor-file" aria-live="polite">
+      <strong id="editorFileName">Loading video…</strong>
+      <span id="editorFileMeta">Reading source metadata</span>
+    </div>
+    <div class="editor-top-actions">
+      <span class="save-state" id="saveState"><svg class="ic"><use href="#i-check"/></svg> Saved locally</span>
+      <a class="btn primary" id="editorDone" href="index.html">Done <svg class="ic"><use href="#i-arrow"/></svg></a>
+    </div>
+  </header>
+
+  <main class="editor-shell" id="editorShell">
+    <section class="editor-upper" id="editorUpper">
+      <aside class="editor-panel layers-panel" aria-label="Black area layers">
+        <div class="panel-head">
+          <div><h2>Black areas</h2><p id="layerCount">0 areas</p></div>
+          <button type="button" class="icon-btn" id="addMaskTop" aria-label="Add black area"><svg class="ic"><use href="#i-plus"/></svg></button>
+        </div>
+        <div class="layer-empty" id="layerEmpty">
+          <svg class="ic"><use href="#i-layers"/></svg>
+          <strong>No areas yet</strong>
+          <p>Add a black area, then place and time it on the video.</p>
+          <button type="button" class="btn small primary" id="addMaskEmpty"><svg class="ic"><use href="#i-plus"/></svg> Add area</button>
+        </div>
+        <div class="layer-list hidden" id="layerList"></div>
+        <div class="panel-foot">
+          <span><span class="kbd">Del</span> remove</span>
+          <button type="button" class="link hidden" id="clearMasks">Clear all</button>
+        </div>
+      </aside>
+
+      <div class="panel-splitter vertical" id="leftSplitter" role="separator" aria-orientation="vertical" aria-label="Resize layers panel" tabindex="0"><span></span></div>
+
+      <section class="canvas-panel" aria-label="Video preview">
+        <div class="canvas-toolbar">
+          <div class="transport-group">
+            <button type="button" class="icon-btn play-btn" id="editorPlay" aria-label="Play"><svg class="ic"><use href="#i-play"/></svg></button>
+            <span class="editor-time" id="editorTime">0:00.000</span>
+            <span class="time-separator">/</span>
+            <span class="editor-duration" id="editorDuration">0:00.000</span>
+          </div>
+          <button type="button" class="btn small primary" id="addMask"><svg class="ic"><use href="#i-plus"/></svg> Add black area</button>
+          <div class="zoom-group" aria-label="Video zoom">
+            <span>Video</span>
+            <button type="button" class="icon-btn" id="videoZoomOut" aria-label="Zoom video out"><svg class="ic"><use href="#i-minus"/></svg></button>
+            <input type="range" id="videoZoom" min="25" max="300" step="5" value="100" aria-label="Video zoom percent" />
+            <button type="button" class="icon-btn" id="videoZoomIn" aria-label="Zoom video in"><svg class="ic"><use href="#i-plus"/></svg></button>
+            <button type="button" class="zoom-value" id="videoZoomFit" title="Fit video to viewport"><svg class="ic"><use href="#i-fit"/></svg> <span id="videoZoomLabel">Fit</span></button>
+          </div>
+        </div>
+        <div class="stage-viewport" id="stageViewport">
+          <div class="stage-space" id="stageSpace">
+            <div class="editor-stage" id="editorStage">
+              <video id="editorVideo" preload="auto" playsinline></video>
+              <div class="editor-overlay" id="editorOverlay" tabindex="0" aria-label="Video frame. Drag areas to move and use corner handles to resize."></div>
+            </div>
+          </div>
+        </div>
+        <div class="canvas-status">
+          <span><svg class="ic"><use href="#i-alert"/></svg> Black areas require video re-encoding.</span>
+          <span>Drag canvas scrollbars when zoomed · <span class="kbd">Space</span> play · <span class="kbd">←</span><span class="kbd">→</span> 1 ms</span>
+        </div>
+      </section>
+
+      <div class="panel-splitter vertical" id="rightSplitter" role="separator" aria-orientation="vertical" aria-label="Resize properties panel" tabindex="0"><span></span></div>
+
+      <aside class="editor-panel properties-panel" aria-label="Selected area properties">
+        <div class="panel-head">
+          <div><h2>Properties</h2><p>Position and timing</p></div>
+        </div>
+        <div class="properties-empty" id="propertiesEmpty">
+          <svg class="ic"><use href="#i-square"/></svg>
+          <p>Select an area to edit its exact values.</p>
+        </div>
+        <div class="properties-form hidden" id="propertiesForm">
+          <div class="selected-head">
+            <div><span class="layer-number" id="selectedNumber">1</span><strong id="selectedTitle">Area 1</strong></div>
+            <span class="active-state" id="activeState">Active now</span>
+          </div>
+
+          <fieldset>
+            <legend><svg class="ic"><use href="#i-clock"/></svg> Timing</legend>
+            <label class="property-field" for="startMs">
+              <span>Start <button type="button" class="link" data-set-current="start">Use playhead</button></span>
+              <span class="unit-input"><input type="number" id="startMs" min="0" step="1" /><em>ms</em></span>
+              <small id="startHuman">0:00.000</small>
+            </label>
+            <label class="property-field" for="endMs">
+              <span>End <button type="button" class="link" data-set-current="end">Use playhead</button></span>
+              <span class="unit-input"><input type="number" id="endMs" min="1" step="1" /><em>ms</em></span>
+              <small id="endHuman">0:00.001</small>
+            </label>
+            <div class="duration-readout"><span>Duration</span><strong id="maskDuration">1 ms</strong></div>
+          </fieldset>
+
+          <fieldset>
+            <legend><svg class="ic"><use href="#i-fit"/></svg> Frame position</legend>
+            <div class="geometry-grid">
+              <label>X <span class="unit-input"><input type="number" id="maskX" min="0" max="100" step="0.1" /><em>%</em></span></label>
+              <label>Y <span class="unit-input"><input type="number" id="maskY" min="0" max="100" step="0.1" /><em>%</em></span></label>
+              <label>Width <span class="unit-input"><input type="number" id="maskW" min="1" max="100" step="0.1" /><em>%</em></span></label>
+              <label>Height <span class="unit-input"><input type="number" id="maskH" min="1" max="100" step="0.1" /><em>%</em></span></label>
+            </div>
+          </fieldset>
+
+          <div class="property-actions">
+            <button type="button" class="btn small" id="duplicateMask"><svg class="ic"><use href="#i-copy"/></svg> Duplicate</button>
+            <button type="button" class="btn small danger" id="deleteMask"><svg class="ic"><use href="#i-trash"/></svg> Delete</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <div class="panel-splitter horizontal" id="timelineSplitter" role="separator" aria-orientation="horizontal" aria-label="Resize timeline" tabindex="0"><span></span></div>
+
+    <section class="timeline-panel" id="timelinePanel" aria-label="Black area timeline">
+      <div class="timeline-toolbar">
+        <div>
+          <h2>Timeline</h2>
+          <span id="timelineResolution">Level 1/4 · playhead step 1.000 s</span>
+        </div>
+        <div class="timeline-actions">
+          <button type="button" class="btn small" id="timelineToStart">Go to start</button>
+          <div class="zoom-group" aria-label="Timeline zoom">
+            <span>Ruler</span>
+            <button type="button" class="icon-btn" id="timelineZoomOut" aria-label="Zoom timeline out"><svg class="ic"><use href="#i-minus"/></svg></button>
+            <input type="range" id="timelineZoom" min="1" max="4" step="1" value="1" aria-label="Timeline zoom level" />
+            <button type="button" class="icon-btn" id="timelineZoomIn" aria-label="Zoom timeline in"><svg class="ic"><use href="#i-plus"/></svg></button>
+            <button type="button" class="zoom-value" id="timelineZoomFit"><svg class="ic"><use href="#i-fit"/></svg> Fit</button>
+          </div>
+        </div>
+      </div>
+      <div class="timeline-scroll" id="timelineScroll">
+        <canvas id="timelineCanvas" tabindex="0" aria-label="Time ruler and black area tracks"></canvas>
+      </div>
+      <div class="timeline-help">
+        <span>Drag the red playhead; its step changes from 1 s to 500 ms, 100 ms, then 50 ms as you zoom.</span>
+        <span>Drag a blue bar to move it, or either edge to change its timing.</span>
+      </div>
+    </section>
+  </main>
+
+  <div class="editor-error hidden" id="editorError" role="alert">
+    <svg class="ic"><use href="#i-alert"/></svg>
+    <h1>Video is no longer available</h1>
+    <p id="editorErrorText">Return to LoudLift and upload the video again.</p>
+    <a class="btn primary" href="index.html">Back to LoudLift</a>
+  </div>
+
+  <script src="video-editor.js"></script>
+</body>
+</html>

@@ -255,6 +255,29 @@ function segmentFilters(segments) {
 }
 function segmentsActive(opts) { return opts.mode === 'segments' || opts.applySegments === true; }
 
+// Solid black rectangles positioned as normalized frame coordinates and enabled for
+// millisecond-precise time ranges. Normalized values keep the edit stable across
+// preview size, source resolution and encoder choice.
+function videoMaskFilters(masks) {
+  const out = [];
+  for (const mask of (Array.isArray(masks) ? masks : []).slice(0, 100)) {
+    const x = Math.min(0.99, Math.max(0, Number(mask.x) || 0));
+    const y = Math.min(0.99, Math.max(0, Number(mask.y) || 0));
+    const w = Math.min(1 - x, Math.max(0.01, Number(mask.width) || 0));
+    const h = Math.min(1 - y, Math.max(0.01, Number(mask.height) || 0));
+    const startMs = Math.max(0, Math.round(Number(mask.startMs) || 0));
+    const endMs = Math.max(0, Math.round(Number(mask.endMs) || 0));
+    if (!(endMs > startMs)) continue;
+    const start = (startMs / 1000).toFixed(3);
+    const end = (endMs / 1000).toFixed(3);
+    out.push(
+      `drawbox=x='iw*${x.toFixed(6)}':y='ih*${y.toFixed(6)}':w='iw*${w.toFixed(6)}':h='ih*${h.toFixed(6)}'` +
+      `:color=black@1:t=fill:enable='between(t\\,${start}\\,${end})'`,
+    );
+  }
+  return out;
+}
+
 function buildAudioFilter(opts, measured = null) {
   const f = [];
   if (segmentsActive(opts)) f.push(...segmentFilters(opts.segments));
@@ -329,6 +352,8 @@ function buildArgs({ input, output, outExt, opts, encoderId, hwaccel, measured =
     if (encoderId === 'libx264' || encoderId === 'h264_qsv' || encoderId === 'h264_nvenc' || encoderId === 'h264_amf') {
       args.push('-pix_fmt', 'yuv420p');
     }
+    const videoFilters = videoMaskFilters(opts.videoMasks);
+    if (videoFilters.length) args.push('-vf', videoFilters.join(','));
   }
 
   // ---- audio ----
@@ -507,6 +532,12 @@ app.post('/api/upload', upload.single('video'), async (req, res) => {
   }
 });
 
+app.get('/api/upload/:id', (req, res) => {
+  const up = uploads.get(req.params.id);
+  if (!up) return res.status(404).json({ error: 'The upload has expired or does not exist. Please upload the video again.' });
+  res.json({ id: up.id, name: up.originalName, info: up.info });
+});
+
 // Analyse loudness: mean / peak volume so the UI can suggest a safe gain
 app.post('/api/analyze/:id', async (req, res) => {
   const up = uploads.get(req.params.id);
@@ -588,7 +619,9 @@ app.post('/api/process', async (req, res) => {
   const up = uploads.get(uploadId);
   if (!up) return res.status(404).json({ error: 'The upload has expired or does not exist. Please upload again.' });
 
-  const videoMode = opts.videoMode === 'reencode' ? 'reencode' : 'copy';
+  const videoMaskCount = videoMaskFilters(opts.videoMasks).length;
+  // A visual filter cannot be applied while stream-copying the video.
+  const videoMode = videoMaskCount || opts.videoMode === 'reencode' ? 'reencode' : 'copy';
   const outExt = outputExtFor(up.ext, videoMode, opts.encoder);
   const label = opts.mode === 'normalize' ? 'normalized'
     : opts.mode === 'easy' ? `easy-${EASY_PRESETS[opts.preset] ? opts.preset : 'speech'}`
@@ -596,13 +629,15 @@ app.post('/api/process', async (req, res) => {
     : opts.mode === 'db' ? `${Number(opts.value) >= 0 ? '+' : ''}${Number(opts.value)}dB`
       : `x${Number(opts.value)}`;
   const segSuffix = (opts.applySegments === true && opts.mode !== 'segments' && segmentFilters(opts.segments).length) ? '-seg' : '';
+  const maskSuffix = videoMaskCount ? '-masked' : '';
   const id = newId();
   const job = {
     id, uploadId, opts: { ...opts, videoMode, sampleRate: up.info.audio[0]?.sampleRate || 48000 },
     status: 'running', percent: 0, speed: null, eta: null, fps: 0, phase: '', measured: null,
     duration: up.info.duration, outExt,
     outPath: path.join(OUTPUT_DIR, `${id}${outExt}`),
-    outName: `${safeBase(up.originalName)}_volume_${label}${segSuffix}${outExt}`,
+    outName: `${safeBase(up.originalName)}_volume_${label}${segSuffix}${maskSuffix}${outExt}`,
+    videoMaskCount,
     startedAt: Date.now(), updatedAt: Date.now(), engine: '', error: null, cancelled: false,
   };
   jobs.set(id, job);

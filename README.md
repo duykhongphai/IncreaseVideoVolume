@@ -9,7 +9,7 @@
 <h1 align="center">LoudLift</h1>
 
 <p align="center">
-  <strong>Make any video louder, even and comfortable to listen to, without touching a single video frame.</strong><br>
+  <strong>Make any video louder, even and comfortable to listen to — and optionally cover parts of the frame with timed black areas.</strong><br>
   A self-hosted web tool built on FFmpeg. Runs entirely on your machine, uses your GPU and every CPU core.
 </p>
 
@@ -17,7 +17,7 @@
 
 ## Why LoudLift
 
-Most "increase video volume" tools re-encode the whole file. That takes forever and degrades the picture. LoudLift never does that: the video stream is **copied bit-for-bit** and only the audio track is decoded, processed and re-encoded. A one-hour 4K video is done in well under a minute, and the output frames are identical to the source (verified by hashing the video stream).
+Most "increase video volume" tools re-encode the whole file. That takes forever and degrades the picture. For audio-only jobs, LoudLift avoids that: the video stream is **copied bit-for-bit** and only the audio track is decoded, processed and re-encoded. If you add a visual edit, LoudLift clearly switches to GPU/CPU video re-encoding because new pixels must be written.
 
 On top of a simple gain slider it brings tools you would normally find in a video editor or a broadcast loudness suite:
 
@@ -27,6 +27,7 @@ On top of a simple gain slider it brings tools you would normally find in a vide
 | **Auto normalize** | Two-pass EBU R128 `loudnorm` to any LUFS target (YouTube -14, podcast -16, broadcast -23). |
 | **Easy listening** | Measures loudness the way human hearing perceives it, levels quiet and loud passages, removes low-frequency rumble and lands the whole video at a comfortable level. Presets for speech, film/music and night mode. |
 | **Segments (timeline)** | Waveform timeline at 5 ms resolution with zoom and pan, millisecond-precise split points, auto-split by loudness changes, one-click balancing of every segment to the same RMS level, live "after gain" preview with clipping warnings. |
+| **Timed black areas** | Place, drag and resize multiple solid-black rectangles on a fixed video frame. Give each one an independent start and end in integer milliseconds and preview its active range before processing. |
 | **GPU + CPU** | Optional re-encode mode auto-detects NVIDIA NVENC, Intel Quick Sync, AMD AMF and Apple VideoToolbox, with hardware decoding and automatic CPU fallback. Audio filters use every core. |
 
 Segment gains are an independent layer that can be combined with any other mode: balance the segments first, then run *Easy listening* on top. The loudness measurement pass sees the balanced signal, so the final level is exact.
@@ -59,6 +60,7 @@ Use a different port with `PORT=8080 npm start`.
    - *Auto normalize* for a standard LUFS target.
    - *Easy listening* when you just want it to sound good. Choose *Speech*, *Film / music* or *Night mode*.
    - *Segments (timeline)* when different parts of the video have different levels. Press **Auto-split by loudness**, then **Balance all segments**, or place split points yourself (click, drag, `S`, or type `m:ss.mmm`).
+   - Open **Edit video · black areas** to cover a region for a precise interval. Drag the area on the frame, resize it from the corners, and set its start/end in milliseconds. Adding an area automatically selects video re-encoding.
 3. **Start processing.** Progress, speed and ETA are streamed live. GPU or CPU engine and every fallback attempt are shown.
 4. **Preview and download.** The result plays in the browser; the FFmpeg command that produced it is shown for reference.
 
@@ -110,7 +112,7 @@ The UI is a thin client over a small JSON API, so the tool can be scripted.
 | `POST` | `/api/analyze/:id` | peak / mean level and clipping-free headroom |
 | `GET` | `/api/waveform/:id` | peak + RMS per bucket (base64 `Uint8`, 0 = -60 dB, 255 = 0 dB) |
 | `GET` | `/api/source/:id` | streams the uploaded file (timeline preview) |
-| `POST` | `/api/process` | starts a job; body: `uploadId`, `mode`, `value`, `targetLufs`, `preset`, `segments`, `applySegments`, `limiter`, `audioCodec`, `audioBitrate`, `videoMode`, `encoder`, `quality` |
+| `POST` | `/api/process` | starts a job; body: `uploadId`, `mode`, `value`, `targetLufs`, `preset`, `segments`, `applySegments`, `videoMasks`, `limiter`, `audioCodec`, `audioBitrate`, `videoMode`, `encoder`, `quality` |
 | `GET` | `/api/progress/:jobId` | Server-Sent Events with percent, speed, ETA, phase, engine |
 | `GET` | `/api/job/:jobId` | same data as a single JSON document |
 | `POST` | `/api/cancel/:jobId` | kills the running FFmpeg process |
@@ -134,6 +136,7 @@ server.js            Express API, FFmpeg runner, GPU probing, two-pass loudness,
 public/index.html    UI markup and the SVG icon sprite
 public/app.js        Upload, settings, job tracking, result view
 public/timeline.js   Waveform timeline: zoom/pan, split points, auto-split, balancing
+public/video-editor.js  Fixed-frame black areas with drag/resize and millisecond timing
 public/style.css     Theme and layout
 start.bat            Windows launcher (installs dependencies on first run)
 uploads/, outputs/   Runtime data, git-ignored
@@ -142,7 +145,7 @@ uploads/, outputs/   Runtime data, git-ignored
 ## FAQ
 
 **Does it really not touch the video?**
-Yes. In the default mode the video stream is copied with `-c:v copy`. Hashing the video stream of input and output gives the same MD5.
+Yes for audio-only jobs in the default mode: the video stream is copied with `-c:v copy`, so its hash stays identical. Timed black areas are a visual change, so those jobs are re-encoded automatically.
 
 **Why is the audio re-encoded at all?**
 Gain cannot be changed inside a compressed audio stream, so the audio is decoded, processed and encoded again. The default is AAC at 192 kbps, which is transparent for virtually all sources. FLAC is available for MKV if you want it lossless.

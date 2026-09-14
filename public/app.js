@@ -5,7 +5,7 @@
   const $ = (id) => document.getElementById(id);
   const state = {
     uploadId: null, fileName: '', info: null, caps: null,
-    mode: 'multiplier', jobId: null, es: null,
+    mode: 'multiplier', jobId: null, es: null, forcedVideoMode: false,
   };
 
   // ---------------------------------------------------------------- helpers
@@ -33,11 +33,30 @@
   const setFill = (el, pct) => { el.style.transform = `scaleX(${Math.min(100, Math.max(0, pct)) / 100})`; };
   const multToDb = (m) => 20 * Math.log10(m);
   const dbToMult = (db) => Math.pow(10, db / 20);
+  const videoMaskKey = (id) => `loudlift:videoMasks:${id}`;
+  function getVideoMasks() {
+    if (!state.uploadId) return [];
+    try {
+      const value = JSON.parse(localStorage.getItem(videoMaskKey(state.uploadId)) || '[]');
+      return Array.isArray(value) ? value : [];
+    } catch { return []; }
+  }
+  function clearVideoMasks(id) {
+    if (!id) return;
+    try { localStorage.removeItem(videoMaskKey(id)); } catch { /* storage may be unavailable */ }
+  }
   async function api(url, opts) {
     const r = await fetch(url, opts);
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `Error ${r.status}`);
     return j;
+  }
+
+  function setUploadUrl(id) {
+    const url = new URL(location.href);
+    if (id) url.searchParams.set('uploadId', id);
+    else url.searchParams.delete('uploadId');
+    history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   }
 
   // ---------------------------------------------------------------- hardware
@@ -78,8 +97,12 @@
   });
 
   function uploadFile(file) {
-    if (state.uploadId) fetch(`/api/upload/${state.uploadId}`, { method: 'DELETE' }).catch(() => {});
+    if (state.uploadId) {
+      clearVideoMasks(state.uploadId);
+      fetch(`/api/upload/${state.uploadId}`, { method: 'DELETE' }).catch(() => {});
+    }
     state.uploadId = null; state.info = null;
+    setUploadUrl(null);
     $('fileInfo').classList.add('hidden');
     $('step-settings').classList.add('disabled');
     $('startBtn').disabled = true;
@@ -104,14 +127,7 @@
       let j = {}; try { j = JSON.parse(xhr.responseText); } catch { /* ignore */ }
       if (xhr.status !== 200) { $('uploadProgress').classList.add('hidden'); toast(j.error || 'Upload failed'); return; }
       $('uploadText').textContent = 'Upload complete'; setFill($('uploadFill'), 100); $('uploadPct').textContent = '100%';
-      state.uploadId = j.id; state.fileName = j.name; state.info = j.info;
-      renderFileInfo(j);
-      Timeline.reset();
-      if (state.mode === 'segments') Timeline.load(j.id, j.info.duration || 0);
-      updateSegLayer();
-      $('step-settings').classList.remove('disabled');
-      $('startBtn').disabled = false;
-      $('step-result').classList.add('hidden');
+      activateUpload(j);
       $('step-settings').scrollIntoView({ behavior: 'smooth', block: 'start' });
       toast('Upload complete. Choose a volume setting and press Start.', true, 3000);
     };
@@ -132,6 +148,32 @@
     ].join('');
     $('fileInfo').classList.remove('hidden');
     if (info.audio.length > 1) toast(`This video has ${info.audio.length} audio tracks. The same adjustment is applied to all of them.`, true, 4000);
+  }
+
+  function activateUpload(data) {
+    state.uploadId = data.id; state.fileName = data.name; state.info = data.info;
+    setUploadUrl(data.id);
+    renderFileInfo(data);
+    Timeline.reset();
+    $('videoEditorOpen').href = `editor.html?uploadId=${encodeURIComponent(data.id)}`;
+    if (state.mode === 'segments') Timeline.load(data.id, data.info.duration || 0);
+    updateSegLayer(); updateVideoEdits();
+    $('step-settings').classList.remove('disabled');
+    $('startBtn').disabled = false;
+    $('step-result').classList.add('hidden');
+  }
+
+  async function restoreUploadFromUrl() {
+    const id = new URLSearchParams(location.search).get('uploadId');
+    if (!id || state.uploadId === id) return;
+    try {
+      const data = await api(`/api/upload/${encodeURIComponent(id)}`);
+      activateUpload(data);
+      toast('Video restored. Your editor changes are ready to process.', true, 3000);
+    } catch (error) {
+      setUploadUrl(null);
+      toast(`Could not restore the video: ${error.message}`);
+    }
   }
 
   // ---------------------------------------------------------------- settings
@@ -169,11 +211,12 @@
   document.querySelectorAll('[data-db]').forEach(b => b.addEventListener('click', () => syncDb(b.dataset.db)));
   syncMult(2); syncDb(6);
 
-  document.querySelectorAll('input[name=videoMode]').forEach(r => r.addEventListener('change', () => {
+  function syncVideoModeUI() {
     const re = document.querySelector('input[name=videoMode]:checked').value === 'reencode';
     document.querySelectorAll('#videoModeGroup .radio').forEach(l => l.classList.toggle('active', l.querySelector('input').checked));
     document.querySelectorAll('.reencode-only').forEach(el => el.classList.toggle('hidden', !re));
-  }));
+  }
+  document.querySelectorAll('input[name=videoMode]').forEach(r => r.addEventListener('change', syncVideoModeUI));
   $('qualityRange').addEventListener('input', (e) => { $('qualityLabel').textContent = e.target.value; });
 
   document.querySelectorAll('input[name=easyPreset]').forEach(r => r.addEventListener('change', () => {
@@ -197,6 +240,26 @@
   }
   function modeName() {
     return { multiplier: 'Multiplier', db: 'Decibels', normalize: 'Auto normalize', easy: 'Easy listening', segments: 'Segments' }[state.mode] || state.mode;
+  }
+
+  function updateVideoEdits() {
+    const copy = document.querySelector('input[name=videoMode][value=copy]');
+    const reencode = document.querySelector('input[name=videoMode][value=reencode]');
+    const masks = getVideoMasks();
+    const hasMasks = masks.length > 0;
+    if (hasMasks) {
+      if (copy.checked) { state.forcedVideoMode = true; reencode.checked = true; }
+      copy.disabled = true;
+    } else {
+      copy.disabled = false;
+      if (state.forcedVideoMode) { copy.checked = true; state.forcedVideoMode = false; }
+    }
+    $('videoEditorCount').classList.toggle('hidden', !hasMasks);
+    $('videoEditorCount').textContent = `${masks.length} area${masks.length === 1 ? '' : 's'}`;
+    $('videoEditorStatus').textContent = hasMasks
+      ? `${masks.length} timed black area${masks.length === 1 ? ' is' : 's are'} saved and will be applied during processing.`
+      : 'Open the full editor to place timed black areas with millisecond precision.';
+    syncVideoModeUI();
   }
 
   // ---------------------------------------------------------------- analyze
@@ -240,17 +303,19 @@
       encoder: $('encoderSel').value,
       quality: Number($('qualityRange').value),
     };
+    const videoMasks = getVideoMasks();
+    if (videoMasks.length) body.videoMasks = videoMasks;
     const segs = activeSegments();
     if (state.mode === 'segments') {
       if (!Timeline.isReady()) { toast('Waveform analysis is still running. Please wait a moment.'); return; }
-      if (!segs.length) { toast('No segment has a gain yet. Set a dB value for at least one segment or press "Balance all segments".'); return; }
+      if (!segs.length && !videoMasks.length) { toast('No edit has been configured. Set a segment gain or add a black area to the video.'); return; }
       body.segments = Timeline.getSegments();
     } else if (segs.length && $('applySegChk').checked) {
       body.segments = Timeline.getSegments();
       body.applySegments = true;
     }
-    if (state.mode === 'multiplier' && Math.abs(value - 1) < 1e-6 && !body.applySegments) { toast('A ×1 multiplier would not change the volume.'); return; }
-    if (state.mode === 'db' && value === 0 && !body.applySegments) { toast('0 dB would not change the volume.'); return; }
+    if (state.mode === 'multiplier' && Math.abs(value - 1) < 1e-6 && !body.applySegments && !videoMasks.length) { toast('A ×1 multiplier would not change the volume.'); return; }
+    if (state.mode === 'db' && value === 0 && !body.applySegments && !videoMasks.length) { toast('0 dB would not change the volume.'); return; }
 
     try {
       $('startBtn').disabled = true;
@@ -327,6 +392,7 @@
       `Size: <b>${fmtBytes(job.outSize)}</b> · Processing time: <b>${secs.toFixed(1)} s</b>` +
       (job.duration && secs > 0 ? ` (${(job.duration / secs).toFixed(1)}× realtime)` : '') + `<br>` +
       `Engine: <b>${esc(job.engine)}</b>` +
+      (job.videoMaskCount ? `<br>Video edits: <b>${job.videoMaskCount} black area${job.videoMaskCount === 1 ? '' : 's'}</b>` : '') +
       (job.measured ? `<div class="result-loud"><span>Measured → target loudness:</span><b>${job.measured.inputI.toFixed(1)}</b>${icon('arrow')}<b class="ok">${job.measured.targetI.toFixed(1)} LUFS</b><span class="muted">(peak ${job.measured.inputTp.toFixed(1)} dBTP · range ${job.measured.inputLra.toFixed(1)} LU)</span></div>` : '');
     $('cmdText').textContent = job.command || '';
     $('step-result').classList.remove('hidden');
@@ -347,9 +413,14 @@
     $('preview').pause(); $('preview').removeAttribute('src');
     $('step-result').classList.add('hidden');
     $('fileInfo').classList.add('hidden'); $('uploadProgress').classList.add('hidden');
-    if (state.uploadId) fetch(`/api/upload/${state.uploadId}`, { method: 'DELETE' }).catch(() => {});
+    if (state.uploadId) {
+      clearVideoMasks(state.uploadId);
+      fetch(`/api/upload/${state.uploadId}`, { method: 'DELETE' }).catch(() => {});
+    }
     state.uploadId = null; state.info = null;
-    Timeline.reset(); updateSegLayer();
+    setUploadUrl(null);
+    $('videoEditorOpen').href = 'editor.html';
+    Timeline.reset(); updateSegLayer(); updateVideoEdits();
     $('step-settings').classList.add('disabled'); $('startBtn').disabled = true;
     $('analyzeResult').textContent = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -358,7 +429,17 @@
   window.addEventListener('beforeunload', (e) => {
     if (state.es) { e.preventDefault(); e.returnValue = ''; }
   });
+  window.addEventListener('storage', (e) => {
+    if (state.uploadId && e.key === videoMaskKey(state.uploadId)) updateVideoEdits();
+  });
+  window.addEventListener('focus', updateVideoEdits);
+  window.addEventListener('message', (event) => {
+    if (event.origin !== location.origin || event.data?.type !== 'loudlift-editor-done') return;
+    if (event.data.uploadId === state.uploadId) updateVideoEdits();
+  });
 
   Timeline.init({ onChange: updateSegLayer });
+  updateVideoEdits();
   loadCaps();
+  restoreUploadFromUrl();
 })();
